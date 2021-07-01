@@ -1,16 +1,99 @@
 from poke_env.player.env_player import Gen8EnvSinglePlayer
 import numpy as np
 from tensorflow.keras.layers import Dense, Flatten
-from tensorflow.keras.models import Sequential
+from tensorflow.keras.models import Sequential, load_model
 from rl.agents.dqn import DQNAgent
 from rl.memory import SequentialMemory
 from rl.policy import LinearAnnealedPolicy, EpsGreedyQPolicy
 from tensorflow.keras.optimizers import Adam
 from greedy import Greedy
+from model_player import ModelPlayer
 
 NB_TRAINING_STEPS = 10000
 NB_EVALUATION_EPISODES = 100
+class Elite4(Gen8EnvSinglePlayer):
+    def embed_battle(self, battle):
+        # -1 indicates that the move does not have a base power
+        # or is not available
+        moves_base_power = -np.ones(4)
+        moves_dmg_multiplier = np.ones(4)
+        for i, move in enumerate(battle.available_moves):
+            moves_base_power[i] = (
+                move.base_power / 100
+            )  # Simple rescaling to facilitate learning
+            if move.type:
+                moves_dmg_multiplier[i] = move.type.damage_multiplier(
+                    battle.opponent_active_pokemon.type_1,
+                    battle.opponent_active_pokemon.type_2,
+                )
+       
+        canDyna = 0
+        if battle.can_dynamax:
+            canDyna = 1
+            
+        canODyna = 0
+        if battle.opponent_can_dynamax:
+            canODyna = 1
+        
+        dynamaxTurnsLeft = battle.dynamax_turns_left
+        if battle.dynamax_turns_left == None:
+            dynamaxTurnsLeft = -1
+            
+        OdynamaxTurnsLeft = battle.opponent_dynamax_turns_left
+        if battle.opponent_dynamax_turns_left == None:
+            OdynamaxTurnsLeft = -1
+        # We count how many pokemons have not fainted in each team
+        remaining_mon_team = (
+            len([mon for mon in battle.team.values() if mon.fainted]) / 6
+        )
+        remaining_mon_opponent = (
+            len([mon for mon in battle.opponent_team.values() if mon.fainted]) / 6
+        )
+        
+        our_cur_status = -1
+        if battle.active_pokemon.status:
+            our_cur_status = battle.active_pokemon.status.value/7
+        
+        opp_cur_status = -1
+        if battle.opponent_active_pokemon.status:
+            opp_cur_status = battle.opponent_active_pokemon.status.value/7
+            
+        our_cur_types = -1*np.ones(2)
+        opp_cur_types = -1*np.ones(2)
+        if battle.active_pokemon:
+            our_cur_types[0] = battle.active_pokemon.type_1.value/18
+            if battle.active_pokemon.type_2:
+                our_cur_types[1] = battle.active_pokemon.type_2.value/18
+        
+        if battle.active_pokemon:
+            opp_cur_types[0] = battle.opponent_active_pokemon.type_1.value/18
+            if battle.opponent_active_pokemon.type_2:
+                opp_cur_types[1] = battle.opponent_active_pokemon.type_2.value/18
+        
+        firstturn = battle.active_pokemon.first_turn
+        
+        # Final vector with 10 components
+        return np.concatenate(
+            [
+                moves_base_power,
+                moves_dmg_multiplier,
+                [remaining_mon_team, remaining_mon_opponent],
+                [canDyna,
+                canODyna,
+                firstturn,
+                dynamaxTurnsLeft,
+                OdynamaxTurnsLeft,
+                our_cur_status,
+                opp_cur_status],
+                our_cur_types,
+                opp_cur_types
+            ]
+        )
 
+    def compute_reward(self, battle) -> float:
+        return self.reward_computing_helper(
+            battle, fainted_value=1, hp_value=1, victory_value=30
+        )
 
 class SimpleRLPlayer(Gen8EnvSinglePlayer):
     def embed_battle(self, battle):
@@ -110,19 +193,21 @@ if __name__=='__main__':
     )
 
     dqn.compile(Adam(lr=0.00025), metrics=["mae"])
-
+    
+    opponent = ModelPlayer(load_model('MDSTPoke/model_20000'), Elite4())
     # Training
     NUM_EPOCHS = 37
-    
+    steps = 100 #NB_TRAINING_STEPS*NUM_EPOCHS 
     env_player.play_against(
         env_algorithm=dqn_training,
         opponent=opponent,
-        env_algorithm_kwargs={"dqn": dqn, "nb_steps": NB_TRAINING_STEPS*NUM_EPOCHS},
+        env_algorithm_kwargs={"dqn": dqn, "nb_steps": steps},
     )
 
-    model.save("model_%d" % (NB_TRAINING_STEPS*NUM_EPOCHS))
+    #model.save("model_%d" % (NB_TRAINING_STEPS*NUM_EPOCHS))
     #also have to serialize memory?
 
+    #opponent = ModelPlayer(load_model('models/model_370000'), env_player)
     # Evaluation
     print("Results against Greedy:")
     env_player.play_against(

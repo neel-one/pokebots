@@ -1,3 +1,8 @@
 poke-env
 Pokemon-Showdown
 *.pyc
+.vscode
+.DS_Store
+.Rhistory
+env/
+MDSTPoke/

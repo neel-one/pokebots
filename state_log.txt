@@ -1,0 +1,2 @@
+CRITICAL:Greedy 1:Error message received: |nametaken|Greedy 1|Someone is already using the name "Greedy 1".
+CRITICAL:Test 1:Error message received: |nametaken|Test 1|Someone is already using the name "Test 1".
