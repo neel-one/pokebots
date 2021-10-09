@@ -10,7 +10,7 @@ from poke_env.player.battle_order import BattleOrder
 from poke_env.player.env_player import Gen8EnvSinglePlayer
 from poke_env.player.player import Player
 from poke_env.player_configuration import PlayerConfiguration
-from utils import battle_to_state_min, battle_to_state_max, battle_to_state_helper
+from .utils import battle_to_state_min, battle_to_state_max, battle_to_state_helper
 from typing import Any, Callable, Union, Optional
 import numpy as np
 

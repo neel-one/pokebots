@@ -1,2 +1,2 @@
-from mushroom_utils import ShowdownEnvironment
+from .mushroom_utils import ShowdownEnvironment
 ShowdownEnvironment.register()

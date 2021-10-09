@@ -8,3 +8,4 @@ env/
 MDSTPoke/
 .json
 src/*.png
+*.egg-info/
