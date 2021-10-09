@@ -1,37 +1,11 @@
-import asyncio
-from poke_env.player.player import Player
-from poke_env.player.random_player import RandomPlayer
-from poke_env.environment.pokemon_type import PokemonType
-from poke_env.environment.pokemon import Pokemon
 from poke_env.environment.move import Move
+from poke_env.environment.pokemon import Pokemon
 from poke_env.environment.abstract_battle import AbstractBattle
-import numpy as np
-import time
-import json
-from functools import cmp_to_key
-import sys
 from typing import Optional
-import logging
-#from max_damage import MaxDamagePlayer
-#with open('type_chart.json','r') as f:
-#    type_chart = json.load(f) 
-logging.basicConfig(filename='state_log.txt', level=logging.CRITICAL)
-class Greedy(Player):
-    def choose_move(self, battle):
-        opp = battle.opponent_active_pokemon
-        def calcDmg(move):
-            dmg = move.base_power*move.type.damage_multiplier(opp.type_1, opp.type_2)
-            if battle.active_pokemon.type_1 == move.type or battle.active_pokemon.type_2 == move.type:
-                return 1.5 * dmg
-            return dmg
-        def cmpMoves(move1, move2):
-            return calcDmg(move1) - calcDmg(move2)
-        if battle.available_moves:
-            best_move = max(battle.available_moves, key=cmp_to_key(cmpMoves))
-            return self.create_order(best_move)
-        else:
-            return self.choose_random_move(battle)
+import numpy as np
 
+move_to_vec_min = np.zeros(7)
+move_to_vec_max = np.array([1,250,6,5,6,1,7])
 def move_to_vec_helper(move: Move, pkmn: Optional[Pokemon] = None):
   acc = move.accuracy #float
   base_power = move.base_power #int
@@ -43,7 +17,58 @@ def move_to_vec_helper(move: Move, pkmn: Optional[Pokemon] = None):
   weather = move.weather.value if move.weather else 0
   return np.array(list(locals().values())[2:])
 
-multiplier = {-6: 2/8, -5: 2/7, -4: 2/6, -3: 2/5, -2: 2/4, -1: 2/3, 0: 1, 1: 3/2, 2: 4/2, 3: 5/2, 4: 3, 5: 7/2, 6: 4}
+def pkmn_to_vec_min():
+  s = np.zeros(6)
+  level = 1 #int
+  #stats = pkmn.stats #dict
+  status = 0 #int
+  status_counter = 0 #int
+  hp = 0 #float, perhaps better than current_hp which differs depending on your pkmn or opponent pkmn
+  # effects = pkmn.effects #dict --> probably ignore, fairly hard to serialize...
+  alive = 0 #int
+  first_turn = 0 #int
+  #item = pkmn.item #str, probably can be learned from context
+  #must_recharge = pkmn.must_recharge #bool, probably dont need, nobody uses recharge moves anyways...
+  protect_counter = 0 #int
+
+  #type info
+  type_1 = 0 #int
+  type_2 = 0 #int
+
+  s = np.append(s, [level, status, status_counter, hp, alive, first_turn, protect_counter, type_1, type_2])
+  #move info
+  mvs = np.zeros((4,7))
+  for i in range(4):
+    move_arr = move_to_vec_min
+    mvs[i] = move_arr
+  return np.append(s, mvs.flatten()) 
+
+def pkmn_to_vec_max():
+  s = np.full(6, 800) #np.array
+  level = 100 #int
+  #stats = pkmn.stats #dict
+  status = 7 
+  status_counter = 15
+  hp = 1 #float, perhaps better than current_hp which differs depending on your pkmn or opponent pkmn
+  # effects = pkmn.effects #dict --> probably ignore, fairly hard to serialize...
+  alive = 1
+  first_turn = 1
+  #item = pkmn.item #str, probably can be learned from context
+  #must_recharge = pkmn.must_recharge #bool, probably dont need, nobody uses recharge moves anyways...
+  protect_counter = 5
+
+  #type info
+  type_1 = 18
+  type_2 = 18
+
+  s = np.append(s, [level, status, status_counter, hp, alive, first_turn, protect_counter, type_1, type_2])
+  #move info
+  mvs = np.zeros((4,7))
+  for i in range(4):
+    move_arr = move_to_vec_max
+    mvs[i] = move_arr
+
+  return np.append(s, mvs.flatten())
 
 def pkmn_to_vec_helper(pkmn: Pokemon):
   #meta info
@@ -51,6 +76,7 @@ def pkmn_to_vec_helper(pkmn: Pokemon):
   #ability = pkmn.ability #str, somehow find a way to turn this into an int; we can ignore this for now...
   #active = pkmn.active #bool
 
+  multiplier = {-6: 2/8, -5: 2/7, -4: 2/6, -3: 2/5, -2: 2/4, -1: 2/3, 0: 1, 1: 3/2, 2: 4/2, 3: 5/2, 4: 3, 5: 7/2, 6: 4}
   s = np.zeros(6) #np.array
   base_stats = pkmn.base_stats #dict, base stats and level may be better than stats because of opponent information...
   boosts = pkmn.boosts #dict
@@ -71,19 +97,21 @@ def pkmn_to_vec_helper(pkmn: Pokemon):
   #item = pkmn.item #str, probably can be learned from context
   #must_recharge = pkmn.must_recharge #bool, probably dont need, nobody uses recharge moves anyways...
   protect_counter = pkmn.protect_counter #int
-  
+
   #type info
   type_1 = pkmn.type_1.value #int
   type_2 = pkmn.type_2.value if pkmn.type_2 else 0 #int
-  
+
   s = np.append(s, [level, status, status_counter, hp, alive, first_turn, protect_counter, type_1, type_2])
   #move info
   moves = pkmn.moves #dict
   mvs = np.zeros((4,7))
   for i, move in enumerate(moves.values()):
+    if i >= 4:
+      break
     move_arr = move_to_vec_helper(move)
     mvs[i] = move_arr
-    
+
   return np.append(s, mvs.flatten())
 
 def side_conds_helper(side_conds):
@@ -119,36 +147,42 @@ def battle_to_state_helper(battle: AbstractBattle):
 
   return np.concatenate((pkmn_to_vec_helper(pkmn), pkmn_to_vec_helper(opp_pkmn),
                         f, side_conds, opp_side_conds, [weather, can_dyna, dyna_turns_left,
-                        opp_can_dyna, opp_dyna_turns_left])) 
+                        opp_can_dyna, opp_dyna_turns_left]))
 
-  #return np.concatenate((pkmn_to_vec_helper(pkmn), []))
+def battle_to_state_min():
+  #field, weather, and conditions
+  f = np.zeros(5) # np.array
 
-class Test(Player):
-    ignore_prop = set(('MESSAGES_TO_IGNORE', 'battle_tag', 'can_mega_evolve', 'can_z_move', 'players', 'rqid',
-                    'logger','move_on_next_request','player_role','rating', 'team_size', 'team_preview'))
-    def choose_move(self, battle):
-        # for f in dir(battle):
-        #     if f[0] != '_' and f not in self.ignore_prop:
-        #         print(f, end=': ')
-        #         print(getattr(battle, f))
-        start = time.time()
-        state = battle_to_state_helper(battle)
-        end = time.time()
-        
-        print(len(state), f'time: {end-start}')
-        
-        return self.choose_random_move(battle)
+  side_conds = np.zeros(7) #np.array for the sake of simplicity we only care about screens and hazards
+  opp_side_conds = np.zeros(7) #np.array
 
-async def main():
-    start = time.time()
+  weather = 0
 
-    #random_player = RandomPlayer(battle_format='gen8randombattle')
-    greedy = Greedy(battle_format='gen8randombattle')
-    opponent = Test(battle_format='gen8randombattle')
-    await greedy.battle_against(opponent,n_battles=50)
+  #dynamax details
+  can_dyna = 0
+  dyna_turns_left = 0 #int
+  opp_can_dyna = 0 #int
+  opp_dyna_turns_left = 0 #int
 
-    print(f'Greedy player won {greedy.n_won_battles}; this process took {time.time()-start} seconds')
+  return np.concatenate((pkmn_to_vec_min(), pkmn_to_vec_min(),
+                        f, side_conds, opp_side_conds, [weather, can_dyna, dyna_turns_left,
+                        opp_can_dyna, opp_dyna_turns_left]))
 
-if __name__=='__main__':
-    #print(type_chart)
-    asyncio.get_event_loop().run_until_complete(main())
+def battle_to_state_max():
+  #field, weather, and conditions
+  f = np.full(5, 8) # np.array
+
+  side_conds = np.full(7,3) #np.array for the sake of simplicity we only care about screens and hazards
+  opp_side_conds = np.full(7,3) #np.array
+
+  weather = 7
+
+  #dynamax details
+  can_dyna = 1
+  dyna_turns_left = 3
+  opp_can_dyna = 1
+  opp_dyna_turns_left = 3
+
+  return np.concatenate((pkmn_to_vec_max(), pkmn_to_vec_max(),
+                        f, side_conds, opp_side_conds, [weather, can_dyna, dyna_turns_left,
+                        opp_can_dyna, opp_dyna_turns_left]))

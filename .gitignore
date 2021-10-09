@@ -6,3 +6,5 @@ Pokemon-Showdown
 .Rhistory
 env/
 MDSTPoke/
+.json
+src/*.png

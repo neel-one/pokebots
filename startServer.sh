@@ -1,1 +1,1 @@
-node Pokemon-Showdown/pokemon-showdown start --no-security
+node Pokemon-Showdown/pokemon-showdown start --no-security &
