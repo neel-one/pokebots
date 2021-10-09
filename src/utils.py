@@ -147,7 +147,7 @@ def battle_to_state_helper(battle: AbstractBattle):
 
   return np.concatenate((pkmn_to_vec_helper(pkmn), pkmn_to_vec_helper(opp_pkmn),
                         f, side_conds, opp_side_conds, [weather, can_dyna, dyna_turns_left,
-                        opp_can_dyna, opp_dyna_turns_left]))
+                        opp_can_dyna, opp_dyna_turns_left]), dtype=np.float32)
 
 def battle_to_state_min():
   #field, weather, and conditions
