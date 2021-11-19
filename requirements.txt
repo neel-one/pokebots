@@ -13,7 +13,7 @@ bs4==0.0.1
 cached-property==1.5.2
 certifi==2020.12.5
 cffi==1.14.6
-chardet==4.0.0
+chardet
 cloudpickle==1.6.0
 cycler==0.10.0
 Cython==0.29.24
@@ -59,7 +59,7 @@ nbconvert==6.2.0
 nbformat==5.1.3
 nest-asyncio==1.5.1
 notebook==6.4.4
-numpy==1.19.2
+numpy>=1.20.0
 numpy-ml==0.1.2
 opencv-python==4.5.3.56
 orjson==3.5.1
@@ -70,7 +70,6 @@ pexpect==4.8.0
 pickleshare==0.7.5
 Pillow==7.2.0
 pluggy==1.0.0
--e git+git@github.com:neel-one/pokebots.git@cdf5d4ceb8e0f6e19c5e49f19efadab11670fceb#egg=poke
 poke-env==0.4.8
 prometheus-client==0.11.0
 prompt-toolkit==3.0.20
@@ -108,7 +107,7 @@ tornado==6.1
 tqdm==4.62.3
 traitlets==5.1.0
 typing-extensions==3.7.4.3
-urllib3==1.26.3
+urllib3>=1.21.1
 wcwidth==0.2.5
 webencodings==0.5.1
 websocket-client==1.2.1

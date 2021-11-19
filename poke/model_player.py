@@ -1,12 +1,26 @@
 from poke_env.player.player import Player
 import numpy as np
 
-
-
 class ModelPlayer(Player):
+    '''
+    ModelPlayer is a trained torch nn.Model. Implements the predict function on an embed_battle object.
+    '''
+    def __init__(self, model, env_player, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.model = model
+        self.env_player = env_player
+
+    def choose_move(self, battle):
+        embed_battle = self.env_player.embed_battle(battle)
+        embed_battle = embed_battle.reshape(1,1,embed_battle.shape[0])
+        vals = self.model(embed_battle)
+        action = np.argmax(vals)
+        return self.env_player._action_to_move(action, battle)
+
+class ModelPlayerTF(Player):
 
     '''
-    Model is a trained tf/keras model. Implements the predict function.
+    ModelPlayerTF is a trained tf/keras model. Implements the predict function on an embed_battle object.
     '''
     def __init__(self, model, env_player, *args, **kwargs):
         super().__init__(*args, **kwargs)

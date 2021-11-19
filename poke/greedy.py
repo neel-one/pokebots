@@ -12,11 +12,10 @@ from functools import cmp_to_key
 import sys
 from typing import Optional
 import logging
-import utils
+import poke.utils
 #from max_damage import MaxDamagePlayer
 #with open('type_chart.json','r') as f:
 #    type_chart = json.load(f)
-logging.basicConfig(filename='state_log.txt', level=logging.CRITICAL)
 class Greedy(Player):
     def choose_move(self, battle):
         opp = battle.opponent_active_pokemon

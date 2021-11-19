@@ -10,7 +10,7 @@ from poke_env.player.battle_order import BattleOrder
 from poke_env.player.env_player import Gen8EnvSinglePlayer
 from poke_env.player.player import Player
 from poke_env.player_configuration import PlayerConfiguration
-from .utils import battle_to_state_min, battle_to_state_max, battle_to_state_helper
+from poke.utils import battle_to_state_min, battle_to_state_max, battle_to_state_helper
 from typing import Any, Callable, Union, Optional
 import numpy as np
 
@@ -23,20 +23,22 @@ observation_space = Box(battle_to_state_min(), battle_to_state_max())
 # Does this serialization make sense? order matters and things change every time, hmm
 action_space = Discrete(nactions)
 
-class ShowdownEnvironment(Environment, Gen8EnvSinglePlayer):
-    _ACTION_SPACE = list(range(13)) # override implementation of Gen8EnvSinglePlayer
 
-    def __init__(self, 
-        player_configuration: Optional[PlayerConfiguration] = None,
-        mdp_info: MDPInfo = None,
-        embed_battle_func: Callable = battle_to_state_helper,
-        observation_space: Union[Box,Discrete] = observation_space, 
-        action_space: Union[Box,Discrete] = action_space, 
-        gamma: float = .99, 
-        horizon: int = 200,
-        start_timer_on_battle_start: bool = True,
-        **kwargs
-    ):
+class ShowdownEnvironment(Environment, Gen8EnvSinglePlayer):
+    # override implementation of Gen8EnvSinglePlayer
+    _ACTION_SPACE = list(range(13))
+
+    def __init__(self,
+                 player_configuration: Optional[PlayerConfiguration] = None,
+                 mdp_info: MDPInfo = None,
+                 embed_battle_func: Callable = battle_to_state_helper,
+                 observation_space: Union[Box, Discrete] = observation_space,
+                 action_space: Union[Box, Discrete] = action_space,
+                 gamma: float = .99,
+                 horizon: int = 200,
+                 start_timer_on_battle_start: bool = True,
+                 **kwargs):
+
         if mdp_info is None:
             mdp_info = MDPInfo(observation_space, action_space, gamma, horizon)
 
@@ -44,8 +46,8 @@ class ShowdownEnvironment(Environment, Gen8EnvSinglePlayer):
 
         Environment.__init__(self, mdp_info)
 
-        Gen8EnvSinglePlayer.__init__(self, 
-            player_configuration, 
+        Gen8EnvSinglePlayer.__init__(self,
+            player_configuration,
             start_timer_on_battle_start=start_timer_on_battle_start,
             **kwargs
         )
