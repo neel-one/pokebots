@@ -18,6 +18,7 @@ import poke.utils
 #    type_chart = json.load(f)
 class Greedy(Player):
     def choose_move(self, battle):
+        # logging.warn(f'Available moves: {battle.available_moves}')
         opp = battle.opponent_active_pokemon
         def calcDmg(move):
             dmg = move.base_power*move.type.damage_multiplier(opp.type_1, opp.type_2)
@@ -41,6 +42,7 @@ def move_to_vec_helper(move: Move, pkmn: Optional[Pokemon] = None):
   priority = move.priority #int
   terrain = 0 if not move.terrain else 1 #optional str
   weather = move.weather.value if move.weather else 0
+  # python hack because i am lazy
   return np.array(list(locals().values())[2:])
 
 multiplier = {-6: 2/8, -5: 2/7, -4: 2/6, -3: 2/5, -2: 2/4, -1: 2/3, 0: 1, 1: 3/2, 2: 4/2, 3: 5/2, 4: 3, 5: 7/2, 6: 4}

@@ -10,9 +10,11 @@ from poke_env.player.battle_order import BattleOrder
 from poke_env.player.env_player import Gen8EnvSinglePlayer
 from poke_env.player.player import Player
 from poke_env.player_configuration import PlayerConfiguration
+import torch
 from poke.utils import battle_to_state_min, battle_to_state_max, battle_to_state_helper
 from typing import Any, Callable, Union, Optional
 import numpy as np
+import logging
 
 nactions = 13
 
@@ -56,12 +58,16 @@ class ShowdownEnvironment(Environment, Gen8EnvSinglePlayer):
         # print(action, battle)
         if isinstance(action, np.ndarray):
             action = action[0]
+        if isinstance(action, torch.Tensor):
+            action = action.item()
         # TODO: pass in array of actions by probability to stop from making completely random move
+        # TODO: still problems when switching when they cant
         if action < 4 and action < len(battle.available_moves) and not battle.force_switch:
             return self.create_order(battle.available_moves[action])
         elif battle.can_dynamax and 0 <= action - 4 < len(battle.available_moves) and not battle.force_switch:
             return self.create_order(battle.available_moves[action-4], dynamax=True)
-        elif 0 <= action - 8 < len(battle.available_switches):
+        elif 0 <= action - 8 < len(battle.available_switches) and not battle.maybe_trapped and not battle.trapped:
+            # logging.warning(f'Switching with trapped = {battle.trapped}')
             return self.create_order(battle.available_switches[action-8])
         else:
             return self.choose_random_move(battle)

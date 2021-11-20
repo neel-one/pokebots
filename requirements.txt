@@ -103,6 +103,7 @@ tf-estimator-nightly==1.14.0.dev2019060501
 threadpoolctl==3.0.0
 toml==0.10.2
 torch==1.9.1
+torchsummary
 tornado==6.1
 tqdm==4.62.3
 traitlets==5.1.0

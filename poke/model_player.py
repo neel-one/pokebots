@@ -1,5 +1,6 @@
 from poke_env.player.player import Player
 import numpy as np
+import torch
 
 class ModelPlayer(Player):
     '''
@@ -11,11 +12,12 @@ class ModelPlayer(Player):
         self.env_player = env_player
 
     def choose_move(self, battle):
-        embed_battle = self.env_player.embed_battle(battle)
-        embed_battle = embed_battle.reshape(1,1,embed_battle.shape[0])
-        vals = self.model(embed_battle)
-        action = np.argmax(vals)
-        return self.env_player._action_to_move(action, battle)
+        with torch.no_grad():
+            embed_battle = self.env_player.embed_battle(battle)
+            embed_battle = embed_battle.reshape(1,1,embed_battle.shape[0])
+            vals = self.model(torch.from_numpy(embed_battle))
+            action = np.argmax(vals)
+            return self.env_player._action_to_move(action, battle)
 
 class ModelPlayerTF(Player):
 
