@@ -69,6 +69,11 @@ class ShowdownEnvironment(Environment, Gen8EnvSinglePlayer):
         elif 0 <= action - 8 < len(battle.available_switches) and not battle.maybe_trapped and not battle.trapped:
             # logging.warning(f'Switching with trapped = {battle.trapped}')
             return self.create_order(battle.available_switches[action-8])
+        elif battle.available_moves:
+            # fallback to greedy
+            opp = battle.opponent_active_pokemon
+            best_move = max(battle.available_moves, key=lambda move: move.base_power*move.type.damage_multiplier(opp.type_1, opp.type_2))
+            return self.create_order(best_move)
         else:
             return self.choose_random_move(battle)
 
@@ -77,12 +82,12 @@ class ShowdownEnvironment(Environment, Gen8EnvSinglePlayer):
 
     def step(self, action):
         return Gen8EnvSinglePlayer.step(self, action)
-    
+
     def embed_battle(self, battle: AbstractBattle) -> Any:
         return self._embed_battle_func(battle)
 
     def start_battles(self, opponent):
-        
+
         # Similar to self.play_against, but the battles on on a different thread
         # While end_battles signals battles to end
         self._start_new_battle = True
@@ -109,7 +114,7 @@ class ShowdownEnvironment(Environment, Gen8EnvSinglePlayer):
             # asyncio.set_event_loop(loop)
             while self._start_new_battle:
                 loop.run_until_complete(launch_battles(opponent))
-                
+
         battle_thread = Thread(
             target = loop_battles
         )

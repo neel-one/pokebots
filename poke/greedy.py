@@ -119,9 +119,9 @@ def battle_to_state_helper(battle: AbstractBattle):
   opp_can_dyna = 1 if battle.opponent_can_dynamax else 0 #int
   opp_dyna_turns_left = battle.opponent_dynamax_turns_left if battle.opponent_dynamax_turns_left is not None else 0 #int
 
-  return np.concatenate((pkmn_to_vec_helper(pkmn), pkmn_to_vec_helper(opp_pkmn),
+  return torch.from_numpy(np.concatenate((pkmn_to_vec_helper(pkmn), pkmn_to_vec_helper(opp_pkmn),
                         f, side_conds, opp_side_conds, [weather, can_dyna, dyna_turns_left,
-                        opp_can_dyna, opp_dyna_turns_left]))
+                        opp_can_dyna, opp_dyna_turns_left])))
 
   #return np.concatenate((pkmn_to_vec_helper(pkmn), []))
 l = np.full((110,),np.inf)

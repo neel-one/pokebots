@@ -11,3 +11,6 @@ src/*.png
 *.egg-info/
 poke/ignore
 poke/models
+tags
+checkpoints
+data
